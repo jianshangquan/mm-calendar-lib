@@ -1,0 +1,21 @@
+{
+  "name": "mm-calendar",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/lib.js",
+  "scripts": {
+    "test": "jest --coverage",
+    "test-watch": "jest --coverage --watchAll",
+    "dev": "nodemon ./src/lib.ts",
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.6.3"
+  }
+}
