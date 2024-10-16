@@ -28,11 +28,14 @@ function inChineseNewYear(date: Date) {
     return Math.floor(getNewNoons(date)) > Math.floor(getNewNoons(new Date(date.getFullYear(), 0, 20))) ? 1 : 0
 }
 
-export function getChineseNewYear(gregorianYear: number) {
+export function getChineseNewYear(gregorianYear: number) : Date {
     // Does not quite line up with https://www.travelchinaguide.com/essential/holidays/new-year/dates.htm
+    let start = new Date(gregorianYear, 0, 1);
     for (let i = 0; i <= 30; ++i) {
-        let start = new Date(gregorianYear, 0, 1)
+        start = new Date(gregorianYear, 0, 1)
         start.setDate(21 + i)
         if (inChineseNewYear(start)) return start
     }
+
+    return start;
 }

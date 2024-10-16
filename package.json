@@ -8,17 +8,30 @@
     "test-watch": "jest --coverage --watchAll --verbose",
     "dev": "nodemon ./src/lib.ts",
     "build": "tsc",
-    "build-watch": "tsc --watch"
+    "build-watch": "tsc --watch",
+    "bundle": "rollup --config"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@rollup/plugin-terser": "^0.4.4",
     "@types/jest": "^29.5.13",
     "jest": "^29.7.0",
+    "rollup": "^4.24.0",
+    "rollup-plugin-dts": "^6.1.1",
+    "rollup-plugin-typescript2": "^0.36.0",
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
+    "tslib": "^2.8.0",
     "typescript": "^5.6.3"
+  },
+  "peerDependencies": {
+    "@types/lodash": "^4.17.10",
+    "@types/moment": "^2.11.29",
+    "lodash": "^4.17.21",
+    "lunar-typescript": "^1.7.5",
+    "moment": "^2.30.1"
   }
 }
