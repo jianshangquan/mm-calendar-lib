@@ -2,25 +2,46 @@
 import typescript from 'rollup-plugin-typescript2';
 import dts from "rollup-plugin-dts";
 import terser from '@rollup/plugin-terser';
+import resolve from '@rollup/plugin-node-resolve';
+import commonjs from '@rollup/plugin-commonjs';
+
 const config = [
   {
-    input: 'src/lib.ts',
+    input: 'src/index.ts',
     output: {
-      file: 'dist/lib.js',
+      file: 'dist/index.cjs',
       format: 'cjs',
+      exports: 'auto',
       sourcemap: true,
     },
     plugins: [
-      typescript(), 
-      terser()
+      resolve(),
+      commonjs(),
+      typescript(),
+      // terser(),
     ]
-  }, {
-    input: 'dist/lib.d.ts',
+  },
+  {
+    input: 'src/index.ts',
     output: {
-      file: 'dist/lib.d.ts',
-      format: 'es'
+      file: 'dist/index.esm.js',
+      format: 'esm',
+      sourcemap: true,
+    },
+    plugins: [
+      resolve(),
+      commonjs(),
+      typescript(),
+      // terser(),
+    ]
+  },
+  {
+    input: 'dist/index.d.ts',
+    output: {
+      file: 'dist/index.d.ts',
+      format: 'esm'
     },
     plugins: [dts()]
-  }
+  },
 ];
 export default config;

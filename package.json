@@ -2,20 +2,32 @@
   "name": "mm-calendar",
   "version": "1.0.0",
   "type": "module",
-  "main": "dist/lib.js",
+  "main": "dist/index.cjs",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "test": "jest --coverage",
     "test-watch": "jest --coverage --watchAll --verbose",
-    "dev": "nodemon ./src/lib.ts",
+    "dev": "nodemon ./src/index.ts",
     "build": "tsc",
     "build-watch": "tsc --watch",
-    "bundle": "rollup --config"
+    "bundle": "rollup --config",
+    "prepublishOnly": "npm run bundle"
+  },
+  "files": ["dist"],
+  "exports": {
+    ".": {
+      "require": "./dist/index.cjs",
+      "import": "./dist/index.esm.js"
+    }
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.1",
+    "@rollup/plugin-node-resolve": "^15.3.0",
     "@rollup/plugin-terser": "^0.4.4",
     "@types/jest": "^29.5.13",
     "jest": "^29.7.0",

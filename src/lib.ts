@@ -3,15 +3,15 @@ import { getChineseNewYear } from "./chinese-events";
 import { Lunar, Solar } from 'lunar-typescript';
 import { cloneDeep } from 'lodash';
 import moment, { Moment } from "moment";
-import { Astro, Culture, GregorianCalendarDate, IDate, IRecursiveEventDate, JulianCalendarDate, MahaBote, MoonPhase, MyanmarCalendarDate, MyanmarCalendarDateInfo, MyanmarCalendarOverlapInfo, MyanmarMonths, Nakhat, NgarHle, NullableTimeGregorianCalendarDate, RecursiveEventDate, WeekDay } from "./types";
+import { Astro, Culture, GregorianCalendarDate, IDate, IRecursiveEventDate, JulianCalendarDate, MahaBote, MoonPhase, MyanmarCalendarDate, MyanmarCalendarDateInfo, MyanmarCalendarOverlapInfo, MyanmarMonths, Nakhat, NgarHle, NullableTimeGregorianCalendarDate, RecursiveEventDate, WeekDay, MyanmarMonthType } from './types';
 import { LUNER_MONTH, MYANMAR_EPOCH, SOLAR_YEAR } from "./constant";
-import { ChineseFixedPublicHolidaysInGregorianCalendar, InternationalFixedPublicHolidaysInGregorianCalendar, MyanmarFixedPublicHolidaysInGregorianCalendar } from "./fixed-events";
+import { ChineseFixedPublicHolidaysInGregorianCalendar, CustomHolidays, SHOW_DEFAULT_HOLIDAYS as SHOW_DEFAULT_HOLIDAYS, InternationalFixedPublicHolidaysInGregorianCalendar, MyanmarFixedPublicHolidaysInGregorianCalendar } from "./fixed-events";
 import { Language } from './intl';
 
 // import { convertGregorianToJulianDate } from './lib';
 
 
-const cultures: Culture[] = ['chinese', 'burmese', 'international', 'hindi'];
+export const cultures: Culture[] = ['chinese', 'burmese', 'international', 'hindi'];
 
 
 
@@ -124,7 +124,7 @@ function convertGregorianToJulianDate(date: GregorianCalendarDate): number {
 }
 
 
-function convertJulianDateToGregorianDate(julian: number): GregorianCalendarDate {
+export function convertJulianDateToGregorianDate(julian: number): GregorianCalendarDate {
     julian = julian - 1721119;
 
     let year: number = Math.floor((4 * julian - 1) / 146097);
@@ -395,7 +395,7 @@ function convertJulianDateToMyanmarDate(julianDate: number): MyanmarCalendarDate
 
 
 // references : m2j()
-function convertMyanmarDateToJulianDate(myanmarYear: number, myanmarMonth: number, myanmarMonthType: number, moonPhase: number, fortnightDay: number) {
+export function convertMyanmarDateToJulianDate(myanmarYear: number, myanmarMonth: number, myanmarMonthType: number, moonPhase: number, fortnightDay: number) {
     let b, c: number, mml, m1, m2, md, dd;
     let yo = checkOverlap(myanmarYear);//check year
     b = Math.floor(yo.myanmarYearType / 2);
@@ -516,6 +516,7 @@ function astro({ myanmarMonth, myanmarMonthLength, myanmarDayOfMonth, weekday, m
 
     let nakhat = myanmarYear % 3;
 
+    console.log(mahabote);
     return {
         sabbath: sabbath == 1,
         sabbatheve: sabbatheve == 1,
@@ -532,7 +533,7 @@ function astro({ myanmarMonth, myanmarMonthLength, myanmarDayOfMonth, weekday, m
         mahayatkyan: mahayatkyan == 1,
         shanyat: shanyat == 1,
         nagahle: NgarHle[nagahle],
-        mahabote: MahaBote[mahabote],
+        mahabote: MahaBote[Math.abs(mahabote)],
         nakhat: Nakhat[nakhat],
     };
 }
@@ -540,124 +541,143 @@ function astro({ myanmarMonth, myanmarMonthLength, myanmarDayOfMonth, weekday, m
 
 
 
-function getMyanmarPublicHolidaysInGregorianCalendarOfYear(year: number, {lang}: { lang: Language } = {lang: 'mm'}): RecursiveEventDate[] {
+function getMyanmarPublicHolidaysInGregorianCalendarOfYear(year: number, { lang }: { lang: Language } = { lang: 'mm' }): RecursiveEventDate[] {
 
-    const events: IRecursiveEventDate[] = [
-        ...InternationalFixedPublicHolidaysInGregorianCalendar,
-        ...MyanmarFixedPublicHolidaysInGregorianCalendar,
-        ...ChineseFixedPublicHolidaysInGregorianCalendar
-    ];
-
-    const date: IDate = { day: 1, month: 1, year: year };
-    const julianDate = convertGregorianToJulianDate({ ...date, hour: 0, minute: 0, second: 0 });
-    const myanmarDate = convertJulianDateToMyanmarDate(julianDate);
+    let events: IRecursiveEventDate[] = [];
 
 
-    const thingyanInJulianDate = getMyanmarThingyanTimeInJulianDate(myanmarDate.year);
-    const atat = convertJulianDateToGregorianDate(thingyanInJulianDate.aTatDay);
-    const aKyaDay = convertJulianDateToGregorianDate(thingyanInJulianDate.aKyaDay);
-    events.push({ name: 'thingyan akyo', key: 'thingyan-akyo', day: aKyaDay.day - 1, month: atat.month, culture: 'burmese', type: 'lunar' });
-    events.push({ name: 'thingyan akya', key: 'thingyan-akya', day: aKyaDay.day, month: aKyaDay.month, culture: 'burmese', type: 'lunar' });
-    for (let i = aKyaDay.day; i < atat.day - 1; i++) {
-        events.push({ name: 'thingyan', key: 'thingyan', day: i + 1, month: aKyaDay.month, culture: 'burmese', type: 'lunar' });
+    if (SHOW_DEFAULT_HOLIDAYS) {
+        events = [
+            ...InternationalFixedPublicHolidaysInGregorianCalendar,
+            ...MyanmarFixedPublicHolidaysInGregorianCalendar,
+            ...ChineseFixedPublicHolidaysInGregorianCalendar
+        ];
+
+
+
+
+        const date: IDate = { day: 1, month: 1, year: year };
+        const julianDate = convertGregorianToJulianDate({ ...date, hour: 0, minute: 0, second: 0 });
+        const myanmarDate = convertJulianDateToMyanmarDate(julianDate);
+
+
+        const thingyanInJulianDate = getMyanmarThingyanTimeInJulianDate(myanmarDate.year);
+        const atat = convertJulianDateToGregorianDate(thingyanInJulianDate.aTatDay);
+        const aKyaDay = convertJulianDateToGregorianDate(thingyanInJulianDate.aKyaDay);
+        events.push({ name: 'thingyan akyo', key: 'thingyan-akyo', day: aKyaDay.day - 1, month: atat.month, culture: 'burmese', type: 'lunar' });
+        events.push({ name: 'thingyan akya', key: 'thingyan-akya', day: aKyaDay.day, month: aKyaDay.month, culture: 'burmese', type: 'lunar' });
+        for (let i = aKyaDay.day; i < atat.day - 1; i++) {
+            events.push({ name: 'thingyan', key: 'thingyan', day: i + 1, month: aKyaDay.month, culture: 'burmese', type: 'lunar' });
+        }
+        events.push({ name: 'thingyan atat', key: 'thingyan-atat', day: atat.day, month: atat.month, culture: 'burmese', type: 'lunar' });
+        events.push({ name: 'thingyan nhit san day', key: 'thingyan-new-year', day: atat.day + 1, month: atat.month, culture: 'burmese', type: 'lunar' });
+
+
+        // dabaung
+        const dabaungDate = (myanmarDate.year, MyanmarMonths.Tabaung, myanmarDate.myanmarMonthType, MoonPhase.fullMoon, 29);
+        const dabaungDateGregorian = convertJulianDateToGregorianDate(dabaungDate);
+        events.push({ name: 'တပေါင်းလပြည့်နေ', key: 'thaboung-fullmoon', day: dabaungDateGregorian.day, month: dabaungDateGregorian.month, culture: 'burmese', type: 'lunar' });
+
+        // thadingyut 
+        const thadingyutDate = convertMyanmarDateToJulianDate(myanmarDate.year + 1, MyanmarMonths.Thadingyut, myanmarDate.myanmarMonthType, MoonPhase.fullMoon, 1);
+        const gDate = convertJulianDateToGregorianDate(thadingyutDate);
+        events.push({ name: 'thadingyut', key: 'thingyan', day: gDate.day - 1, month: gDate.month, culture: 'burmese', type: 'lunar' });
+        events.push({ name: 'thadingyut', key: 'thingyan', day: gDate.day, month: gDate.month, culture: 'burmese', type: 'lunar' });
+        events.push({ name: 'thadingyut', key: 'thingyan', day: gDate.day + 1, month: gDate.month, culture: 'burmese', type: 'lunar' });
+
+        // dhamaSakyar
+        const dhamaSakyarDate = convertMyanmarDateToJulianDate(myanmarDate.year + 1, MyanmarMonths.Waso, myanmarDate.myanmarMonthType, MoonPhase.fullMoon, 29);
+        const dhamaSakyarDateGregorian = convertJulianDateToGregorianDate(dhamaSakyarDate);
+        events.push({ name: 'dhamaSakyar', key: 'dhamasakyar-fullmoon', day: dhamaSakyarDateGregorian.day, month: dhamaSakyarDateGregorian.month, culture: 'burmese', type: 'lunar' });
+
+        // kason nyaung yay toon event
+        const kasonNyaungYayToonDate = convertMyanmarDateToJulianDate(myanmarDate.year + 1, MyanmarMonths.Kason, myanmarDate.myanmarMonthType, MoonPhase.fullMoon, 29);
+        const kasonNyaungYayToonDateGregorian = convertJulianDateToGregorianDate(kasonNyaungYayToonDate);
+        events.push({ name: 'ကဆုန်ညောင်ရေသွန်းပွဲ', key: 'kason-fullmoon', day: kasonNyaungYayToonDateGregorian.day, month: kasonNyaungYayToonDateGregorian.month, culture: 'burmese', type: 'lunar' });
+
+        // တန်းဆောင်မုန်းလပြည့်နေ့
+        const thasaungmonFullmoonDate = convertMyanmarDateToJulianDate(myanmarDate.year + 1, MyanmarMonths.Tazaungmon, myanmarDate.myanmarMonthType, MoonPhase.fullMoon, 15);
+        const thasaungmonFullmoonDateGregorian = convertJulianDateToGregorianDate(thasaungmonFullmoonDate);
+        events.push({ name: 'တန်းဆောင်မုန်းလပြည့်နေ့', key: 'tasaungmone-fullmoon', day: thasaungmonFullmoonDateGregorian.day, month: thasaungmonFullmoonDateGregorian.month, culture: 'burmese', type: 'lunar' });
+
+        // ကရင်နှစ်သစ်ကူး
+        const karenNewYearDate = convertMyanmarDateToJulianDate(myanmarDate.year + 1, MyanmarMonths.Pyatho, myanmarDate.myanmarMonthType, MoonPhase.waxing, 1);
+        const karenNewYearDateGregorian = convertJulianDateToGregorianDate(karenNewYearDate);
+        events.push({ name: 'Karen new year', key: 'karen-new-year', day: karenNewYearDateGregorian.day, month: karenNewYearDateGregorian.month, culture: 'burmese', type: 'lunar' });
+
+
+
+
+
+        const chuXi = Lunar.fromYmd(year, 1, 1).getSolar();
+        events.push({ name: '除夕', key: 'qi-xi', day: chuXi.getDay(), month: chuXi.getMonth(), culture: 'chinese', type: 'lunar' });
+
+        const chineseNewYear = getChineseNewYear(year);
+        events.push({ name: 'chinese new year', key: 'xin-nian', day: chineseNewYear.getDate(), month: chineseNewYear.getMonth() + 1, culture: 'chinese', type: 'lunar' });
+
+        const qingShuiZuShiJie = Lunar.fromYmd(year, 1, 6).getSolar();
+        events.push({ name: '清水祖师', key: 'qing-shui-zu-shi-jie', day: qingShuiZuShiJie.getDay(), month: qingShuiZuShiJie.getMonth(), culture: 'chinese', type: 'lunar' });
+
+        const tiangongbirthday = Lunar.fromYmd(year, 1, 9).getSolar();
+        events.push({ name: '天宫宝生', key: 'tian-gong-birthday', day: tiangongbirthday.getDay(), month: tiangongbirthday.getMonth(), culture: 'chinese', type: 'lunar' });
+
+        const yuanxiaojie = Lunar.fromYmd(year, 1, 15).getSolar();
+        events.push({ name: '元宵节', key: 'yuan-xiao-jie', day: yuanxiaojie.getDay(), month: yuanxiaojie.getMonth(), culture: 'chinese', type: 'lunar' });
+
+        const daizhi = Lunar.fromYmd(year, 1, 18).getSolar();
+        events.push({ name: '岱枝兴福', key: 'dai-zhi', day: daizhi.getDay(), month: daizhi.getMonth(), culture: 'chinese', type: 'lunar' });
+
+        const fuDe = Lunar.fromYmd(year, 2, 2).getSolar();
+        events.push({ name: '福德正神诞辰', key: 'fu-de', day: fuDe.getDay(), month: fuDe.getMonth(), culture: 'chinese', type: 'lunar' });
+
+        const guanYinBirthday = Lunar.fromYmd(year, 2, 19).getSolar();
+        events.push({ name: '观音宝诞', key: 'guan-yin-birthday', day: guanYinBirthday.getDay(), month: guanYinBirthday.getMonth(), culture: 'chinese', type: 'lunar' });
+
+        const qingMingJie = Lunar.fromYmd(year, 3, 7).getSolar();
+        events.push({ name: '清明节', key: 'qing-ming', day: qingMingJie.getDay(), month: qingMingJie.getMonth(), culture: 'chinese', type: 'lunar' });
+
+        const maZuoJie = Lunar.fromYmd(year, 3, 23).getSolar();
+        events.push({ name: '马祖宝生', key: 'ma-zuo', day: maZuoJie.getDay(), month: maZuoJie.getMonth(), culture: 'chinese', type: 'lunar' });
+
+        const duanWuJie = Lunar.fromYmd(year, 5, 5).getSolar();
+        events.push({ name: '端午节', key: 'duan-wu', day: duanWuJie.getDay(), month: duanWuJie.getMonth(), culture: 'chinese', type: 'lunar' })
+
+        const guanYinDeDao = Lunar.fromYmd(year, 6, 19).getSolar();
+        events.push({ name: '观音得道', key: 'guan-yin-de-dao', day: guanYinDeDao.getDay(), month: guanYinDeDao.getMonth(), culture: 'chinese', type: 'lunar' })
+
+        const qiXi = Lunar.fromYmd(year, 7, 7).getSolar();
+        events.push({ name: '七夕', key: 'qi-xi', day: qiXi.getDay(), month: qiXi.getMonth(), culture: 'chinese', type: 'lunar' });
+
+        const zhongYuanJie = Lunar.fromYmd(year, 7, 15).getSolar();
+        events.push({ name: '中元节', key: 'zhong-yuan', day: zhongYuanJie.getDay(), month: zhongYuanJie.getMonth(), culture: 'chinese', type: 'lunar' });
+
+        const kongZiBirthday = Lunar.fromYmd(year, 8, 7).getSolar();
+        events.push({ name: '孔子诞辰', key: 'kong-zi-birthday', day: kongZiBirthday.getDay(), month: kongZiBirthday.getMonth(), culture: 'chinese', type: 'lunar' });
+
+        const zhongQiuJie = Lunar.fromYmd(year, 8, 15).getSolar();
+        events.push({ name: '中秋节', key: 'zhong-qiu', day: zhongQiuJie.getDay(), month: zhongQiuJie.getMonth(), culture: 'chinese', type: 'lunar' });
+
+        const zhongYangJie = Lunar.fromYmd(year, 9, 9).getSolar();
+        events.push({ name: '重阳节（တရုတ်ရှင်ဥပဂုတ္တပူဇော်ပွဲ）', key: 'zhong-yang', day: zhongYangJie.getDay(), month: zhongYangJie.getMonth(), culture: 'chinese', type: 'lunar' });
+
+        const guanYinChuJia = Lunar.fromYmd(year, 9, 19).getSolar();
+        events.push({ name: '观音出家', key: 'guan-yin-chu-jia', day: guanYinChuJia.getDay(), month: guanYinChuJia.getMonth(), culture: 'chinese', type: 'lunar' });
+
+        const dongzhi = Lunar.fromYmd(year, 11, 2).getSolar();
+        events.push({ name: '冬至', key: 'dong-zhi', day: dongzhi.getDay(), month: dongzhi.getMonth(), culture: 'chinese', type: 'lunar' });
+
     }
-    events.push({ name: 'thingyan atat', key: 'thingyan-atat', day: atat.day, month: atat.month, culture: 'burmese', type: 'lunar' });
-    events.push({ name: 'thingyan nhit san day', key: 'thingyan-new-year', day: atat.day + 1, month: atat.month, culture: 'burmese', type: 'lunar' });
 
 
-    // dabaung
-    const dabaungDate = convertMyanmarDateToJulianDate(myanmarDate.year, MyanmarMonths.Tabaung, myanmarDate.myanmarMonthType, MoonPhase.fullMoon, 29);
-    const dabaungDateGregorian = convertJulianDateToGregorianDate(dabaungDate);
-    events.push({ name: 'တပေါင်းလပြည့်နေ', key: 'thaboung-fullmoon', day: dabaungDateGregorian.day, month: dabaungDateGregorian.month, culture: 'burmese', type: 'lunar' });
-
-    // thadingyut 
-    const thadingyutDate = convertMyanmarDateToJulianDate(myanmarDate.year + 1, MyanmarMonths.Thadingyut, myanmarDate.myanmarMonthType, MoonPhase.fullMoon, 1);
-    const gDate = convertJulianDateToGregorianDate(thadingyutDate);
-    events.push({ name: 'thadingyut', key: 'thingyan', day: gDate.day - 1, month: gDate.month, culture: 'burmese', type: 'lunar' });
-    events.push({ name: 'thadingyut', key: 'thingyan', day: gDate.day, month: gDate.month, culture: 'burmese', type: 'lunar' });
-    events.push({ name: 'thadingyut', key: 'thingyan', day: gDate.day + 1, month: gDate.month, culture: 'burmese', type: 'lunar' });
-
-    // dhamaSakyar
-    const dhamaSakyarDate = convertMyanmarDateToJulianDate(myanmarDate.year + 1, MyanmarMonths.Waso, myanmarDate.myanmarMonthType, MoonPhase.fullMoon, 29);
-    const dhamaSakyarDateGregorian = convertJulianDateToGregorianDate(dhamaSakyarDate);
-    events.push({ name: 'dhamaSakyar', key: 'dhamasakyar-fullmoon', day: dhamaSakyarDateGregorian.day, month: dhamaSakyarDateGregorian.month, culture: 'burmese', type: 'lunar' });
-
-    // kason nyaung yay toon event
-    const kasonNyaungYayToonDate = convertMyanmarDateToJulianDate(myanmarDate.year + 1, MyanmarMonths.Kason, myanmarDate.myanmarMonthType, MoonPhase.fullMoon, 29);
-    const kasonNyaungYayToonDateGregorian = convertJulianDateToGregorianDate(kasonNyaungYayToonDate);
-    events.push({ name: 'ကဆုန်ညောင်ရေသွန်းပွဲ', key: 'kason-fullmoon', day: kasonNyaungYayToonDateGregorian.day, month: kasonNyaungYayToonDateGregorian.month, culture: 'burmese', type: 'lunar' });
-
-    // တန်းဆောင်မုန်းလပြည့်နေ့
-    const thasaungmonFullmoonDate = convertMyanmarDateToJulianDate(myanmarDate.year + 1, MyanmarMonths.Tazaungmon, myanmarDate.myanmarMonthType, MoonPhase.fullMoon, 15);
-    const thasaungmonFullmoonDateGregorian = convertJulianDateToGregorianDate(thasaungmonFullmoonDate);
-    events.push({ name: 'တန်းဆောင်မုန်းလပြည့်နေ့', key: 'tasaungmone-fullmoon', day: thasaungmonFullmoonDateGregorian.day, month: thasaungmonFullmoonDateGregorian.month, culture: 'burmese', type: 'lunar' });
-
-    // ကရင်နှစ်သစ်ကူး
-    const karenNewYearDate = convertMyanmarDateToJulianDate(myanmarDate.year + 1, MyanmarMonths.Pyatho, myanmarDate.myanmarMonthType, MoonPhase.waxing, 1);
-    const karenNewYearDateGregorian = convertJulianDateToGregorianDate(karenNewYearDate);
-    events.push({ name: 'Karen new year', key: 'karen-new-year', day: karenNewYearDateGregorian.day, month: karenNewYearDateGregorian.month, culture: 'burmese', type: 'lunar' });
-
-
-
-
-
-    const chuXi = Lunar.fromYmd(year, 1, 1).getSolar();
-    events.push({ name: '除夕', key: 'qi-xi', day: chuXi.getDay(), month: chuXi.getMonth(), culture: 'chinese', type: 'lunar' });
-
-    const chineseNewYear = getChineseNewYear(year);
-    events.push({ name: 'chinese new year', key: 'xin-nian', day: chineseNewYear.getDate(), month: chineseNewYear.getMonth() + 1, culture: 'chinese', type: 'lunar' });
-
-    const qingShuiZuShiJie = Lunar.fromYmd(year, 1, 6).getSolar();
-    events.push({ name: '清水祖师', key: 'qing-shui-zu-shi-jie', day: qingShuiZuShiJie.getDay(), month: qingShuiZuShiJie.getMonth(), culture: 'chinese', type: 'lunar' });
-
-    const tiangongbirthday = Lunar.fromYmd(year, 1, 9).getSolar();
-    events.push({ name: '天宫宝生', key: 'tian-gong-birthday', day: tiangongbirthday.getDay(), month: tiangongbirthday.getMonth(), culture: 'chinese', type: 'lunar' });
-
-    const yuanxiaojie = Lunar.fromYmd(year, 1, 15).getSolar();
-    events.push({ name: '元宵节', key: 'yuan-xiao-jie', day: yuanxiaojie.getDay(), month: yuanxiaojie.getMonth(), culture: 'chinese', type: 'lunar' });
-
-    const daizhi = Lunar.fromYmd(year, 1, 18).getSolar();
-    events.push({ name: '岱枝兴福', key: 'dai-zhi', day: daizhi.getDay(), month: daizhi.getMonth(), culture: 'chinese', type: 'lunar' });
-
-    const fuDe = Lunar.fromYmd(year, 2, 2).getSolar();
-    events.push({ name: '福德正神诞辰', key: 'fu-de', day: fuDe.getDay(), month: fuDe.getMonth(), culture: 'chinese', type: 'lunar' });
-
-    const guanYinBirthday = Lunar.fromYmd(year, 2, 19).getSolar();
-    events.push({ name: '观音宝诞', key: 'guan-yin-birthday', day: guanYinBirthday.getDay(), month: guanYinBirthday.getMonth(), culture: 'chinese', type: 'lunar' });
-
-    const qingMingJie = Lunar.fromYmd(year, 3, 7).getSolar();
-    events.push({ name: '清明节', key: 'qing-ming', day: qingMingJie.getDay(), month: qingMingJie.getMonth(), culture: 'chinese', type: 'lunar' });
-
-    const maZuoJie = Lunar.fromYmd(year, 3, 23).getSolar();
-    events.push({ name: '马祖宝生', key: 'ma-zuo', day: maZuoJie.getDay(), month: maZuoJie.getMonth(), culture: 'chinese', type: 'lunar' });
-
-    const duanWuJie = Lunar.fromYmd(year, 5, 5).getSolar();
-    events.push({ name: '端午节', key: 'duan-wu', day: duanWuJie.getDay(), month: duanWuJie.getMonth(), culture: 'chinese', type: 'lunar' })
-
-    const guanYinDeDao = Lunar.fromYmd(year, 6, 19).getSolar();
-    events.push({ name: '观音得道', key: 'guan-yin-de-dao', day: guanYinDeDao.getDay(), month: guanYinDeDao.getMonth(), culture: 'chinese', type: 'lunar' })
-
-    const qiXi = Lunar.fromYmd(year, 7, 7).getSolar();
-    events.push({ name: '七夕', key: 'qi-xi', day: qiXi.getDay(), month: qiXi.getMonth(), culture: 'chinese', type: 'lunar' });
-
-    const zhongYuanJie = Lunar.fromYmd(year, 7, 15).getSolar();
-    events.push({ name: '中元节', key:'zhong-yuan', day: zhongYuanJie.getDay(), month: zhongYuanJie.getMonth(), culture: 'chinese', type: 'lunar' });
-
-    const kongZiBirthday = Lunar.fromYmd(year, 8, 7).getSolar();
-    events.push({ name: '孔子诞辰', key: 'kong-zi-birthday', day: kongZiBirthday.getDay(), month: kongZiBirthday.getMonth(), culture: 'chinese', type: 'lunar' });
-
-    const zhongQiuJie = Lunar.fromYmd(year, 8, 15).getSolar();
-    events.push({ name: '中秋节', key: 'zhong-qiu', day: zhongQiuJie.getDay(), month: zhongQiuJie.getMonth(), culture: 'chinese', type: 'lunar' });
-
-    const zhongYangJie = Lunar.fromYmd(year, 9, 9).getSolar();
-    events.push({ name: '重阳节（တရုတ်ရှင်ဥပဂုတ္တပူဇော်ပွဲ）', key: 'zhong-yang', day: zhongYangJie.getDay(), month: zhongYangJie.getMonth(), culture: 'chinese', type: 'lunar' });
-
-    const guanYinChuJia = Lunar.fromYmd(year, 9, 19).getSolar();
-    events.push({ name: '观音出家', key: 'guan-yin-chu-jia', day: guanYinChuJia.getDay(), month: guanYinChuJia.getMonth(), culture: 'chinese', type: 'lunar' });
-
-    const dongzhi = Lunar.fromYmd(year, 11, 2).getSolar();
-    events.push({ name: '冬至', key: 'dong-zhi', day: dongzhi.getDay(), month: dongzhi.getMonth(), culture: 'chinese', type: 'lunar' });
-
+    // add custom hoilday
+    CustomHolidays.forEach(holiday => {
+        if (typeof holiday == 'function') {
+            const h = holiday(year);
+            events.push(h);
+        } else {
+            events.push(holiday);
+        }
+    });
 
 
     return events.sort((a: IRecursiveEventDate, b: IRecursiveEventDate) => {
@@ -666,20 +686,36 @@ function getMyanmarPublicHolidaysInGregorianCalendarOfYear(year: number, {lang}:
         }
         return a.month - b.month;
     }).map(event => {
-        const e = new RecursiveEventDate({...event, lang});
+        const e = new RecursiveEventDate({ ...event, lang }); convertMyanmarDateToJulianDate
         return e;
     });
 }
 
 
 
-export class MMDate {
+
+
+
+
+
+
+interface DateObject {
+    clone(): DateObject;
+    toGregorian(): GregorianCalendarDate;
+    toJulian(): number;
+    toDate(): Date;
+    toMoment(): Moment;
+    toLunisolar(): MyanmarCalendarDate;
+}
+
+
+export class MyanmarDate implements DateObject {
     private date: GregorianCalendarDate;
     private myanmarDate: MyanmarCalendarDateInfo;
     private holiday: RecursiveEventDate[] | null = null;
-    private lang: Language = 'mm';
+    private lang: Language;
 
-    constructor(date: NullableTimeGregorianCalendarDate) {
+    constructor(date: NullableTimeGregorianCalendarDate, { lang }: { lang: Language } = { lang: 'mm' }) {
         this.date = {
             day: date.day,
             month: date.month,
@@ -688,18 +724,24 @@ export class MMDate {
             minute: date.minute || 0,
             second: date.second || 0
         };
+        this.lang = lang;
         const jdn = convertGregorianToJulianDate(this.date);
         this.myanmarDate = convertJulianDateToMyanmarDate(jdn);
     }
 
-    static fromMyanmarDate(date: MyanmarCalendarDate): MMDate {
-        const jdn = convertMyanmarDateToJulianDate(date.year, date.month, date.myanmarMonthType, date.moonPhase, date.fortnightDay);
-        const gregorianDate = convertJulianDateToGregorianDate(jdn);
-        return new MMDate(gregorianDate);
+    static now(): MyanmarDate {
+        const now = new Date();
+        return new MyanmarDate({ day: now.getDate(), month: now.getMonth() + 1, year: now.getFullYear() })
     }
 
-    static getHolidaysOfYear(year: number, { lang } : { lang: Language } = {lang: 'mm'}) {
-        return getMyanmarPublicHolidaysInGregorianCalendarOfYear(year, {lang});
+    static fromMyanmarDate(date: MyanmarCalendarDate): MyanmarDate {
+        const jdn = convertMyanmarDateToJulianDate(date.year, date.month, date.myanmarMonthType, date.moonPhase, date.fortnightDay);
+        const gregorianDate = convertJulianDateToGregorianDate(jdn);
+        return new MyanmarDate(gregorianDate);
+    }
+
+    static getHolidaysOfYear(year: number, { lang }: { lang: Language } = { lang: 'mm' }) {
+        return getMyanmarPublicHolidaysInGregorianCalendarOfYear(year, { lang });
     }
 
 
@@ -734,6 +776,10 @@ export class MMDate {
         return this.myanmarDate;
     }
 
+    getBuddhistYear(): number{
+        return this.myanmarDate.buddhistYear;
+    }
+
     toLunisolar(): MyanmarCalendarDate {
         const jdn = this.toJulian();
         const toMyanmarDate = convertJulianDateToMyanmarDate(jdn);
@@ -742,11 +788,8 @@ export class MMDate {
             month: toMyanmarDate.month,
             year: toMyanmarDate.year,
             moonPhase: toMyanmarDate.moonPhase,
-            weekDay: toMyanmarDate.weekDay,
-            weekDayName: WeekDay[toMyanmarDate.weekDay],
             myanmarMonthType: toMyanmarDate.myanmarMonthType,
             fortnightDay: toMyanmarDate.fortnightDay,
-            buddhistYear: toMyanmarDate.buddhistYear
         }
     }
 
@@ -764,23 +807,41 @@ export class MMDate {
         return !!this.holiday!.find(h => h.type == 'fixed');
     }
 
-    isFullmoonDay(): boolean{
+    isFullmoonDay(): boolean {
         return this.myanmarDate.fortnightDay == 15;
     }
 
-    get holidays() : RecursiveEventDate[]{
+    get holidays(): RecursiveEventDate[] {
         this.#assignHoliday();
         return this.holiday!;
     }
 
-    #assignHoliday(){
-        if(this.holiday == null){
-            const holi = getMyanmarPublicHolidaysInGregorianCalendarOfYear(this.date.year);
+    setLang(lang: Language) {
+        this.lang = lang;
+        this.holiday = null;
+    }
+
+    #assignHoliday() {
+        if (this.holiday == null) {
+            const holi = getMyanmarPublicHolidaysInGregorianCalendarOfYear(this.date.year, { lang: this.lang });
             this.holiday = holi.filter(h => h.month == this.date.month && h.day == this.date.day);
         }
     }
-    
-    clone(): MMDate {
-        return new MMDate(cloneDeep(this.date));
+
+    clone(): MyanmarDate {
+        return new MyanmarDate(cloneDeep(this.date));
+    }
+
+    copyWith(date: GregorianCalendarDate): MyanmarDate {
+        return new MyanmarDate({ ...this.date, ...date });
+    }
+
+    format(format: string, lang: Language = 'mm'): string {
+        return ''
     }
 }
+
+
+
+
+

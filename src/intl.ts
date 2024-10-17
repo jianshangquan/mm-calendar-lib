@@ -1,11 +1,11 @@
-export type LanguageTranslationKey = keyof typeof en;
+export type LanguageTranslationKey = 'full-moon' | 'new-year' | 'valentine' | 'woman-day' | 'april-fool' | 'mother-day' | 'father-day' | 'christmas' | 'independent-day' | 'union-day' | 'aung-san-birthday' | 'peasants-day' | 'martyrs-day' | 'national-day' | 'may-day' | 'thingyan-akyo' | 'thingyan-akya' | 'thingyan-atat' | 'thingyan' | 'thingyan-new-year' | 'thaboung-fullmoon' | 'thadingyut-before' | 'thadingyut-fullmoon' | 'thadingyut-after' | 'dhamasakyar-fullmoon' | 'tasaungmone-fullmoon' | 'kason-fullmoon' | 'karen-new-year' | 'guo-qing-jie' | 'chu-xi' | 'xin-nian' | 'qing-shui-zu-shi-jie' | 'tian-gong-birthday' | 'yuan-xiao-jie' | 'dai-zhi' | 'fu-de' | 'guan-yin-birthday' | 'qing-ming' | 'ma-zuo' | 'duan-wu' | 'guan-yin-de-dao' | 'qi-xi' | 'zhong-yuan' | 'kong-zi-birthday' | 'zhong-qiu' | 'zhong-yang' | 'guan-yin-chu-jia' | 'dong-zhi' | string;
 type LanguageTranslation = {
-    [key in LanguageTranslationKey]: string;
-}
+    [key: LanguageTranslationKey]: string;
+} 
 
 export type Language = 'en' | 'cn' | 'mm';
 
-const en = {
+const en : LanguageTranslation = {
     'full-moon': 'Full Moon',
     'new-year': 'New Year',
     'valentine': 'Valentine day',
@@ -177,5 +177,11 @@ const Lang = {
     en, cn, mm
 }
 
+
+export const LanguageConfig = {
+    set(lang: Language, key: LanguageTranslationKey | string, value: string){
+        Lang[lang][key] = value;
+    }
+}
 
 export default Lang;

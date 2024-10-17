@@ -1,5 +1,5 @@
 import Lang, { Language, LanguageTranslationKey } from "./intl";
-import { MMDate } from "./lib";
+import { MyanmarDate } from "./lib";
 
 export interface IDate {
     year: number;
@@ -17,6 +17,18 @@ export interface IRecursiveEventDate{
     type: RecursiveEventType;
     key: LanguageTranslationKey
 }
+
+export interface IRecursiveMyanmarEventDate{
+    name: string;
+    day: number;
+    month: MyanmarMonths;
+    culture: Culture;
+    type: RecursiveEventType;
+    key: LanguageTranslationKey,
+    monthType: MyanmarMonthType,
+    moonPhase: MoonPhase,
+}
+
 export class RecursiveEventDate{
     #name: string;
     day: number;
@@ -26,7 +38,7 @@ export class RecursiveEventDate{
     key: LanguageTranslationKey;
     
     constructor({ key, day, month, culture, type, lang = 'mm', name }: { name: string, key: LanguageTranslationKey, day: number, month: number, culture: Culture, type: RecursiveEventType, lang: Language }){
-        this.#name = Lang[lang][key] || name;
+        this.#name = Lang[lang][key as string] || name;
         this.key = key;
         this.day = day;
         this.month = month;
@@ -34,8 +46,8 @@ export class RecursiveEventDate{
         this.type = type;
     }
 
-    toMMDate(year: number) : MMDate{
-        return new MMDate({year, month: this.month, day: this.day});
+    toMMDate(year: number) : MyanmarDate{
+        return new MyanmarDate({year, month: this.month, day: this.day});
     }
 
     get name(): string{
@@ -65,7 +77,7 @@ export interface MyanmarCalendarDateInfo {
     buddhistYear: number
 }
 
-export type MyanmarCalendarDate = Omit<MyanmarCalendarDateInfo, 'lengthOfDaysInYear' | 'yearOverlap' | 'firstTagu' | 'myanmarMonthLength'>
+export type MyanmarCalendarDate = Omit<MyanmarCalendarDateInfo, 'weekDayName' | 'buddhistYear' | 'weekDay' | 'lengthOfDaysInYear' | 'yearOverlap' | 'firstTagu' | 'myanmarMonthLength'>
 
 export interface MyanmarCalendarOverlapInfo {
     myanmarYearType: MyanmarYearType,
